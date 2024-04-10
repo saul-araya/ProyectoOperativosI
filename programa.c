@@ -12,7 +12,7 @@ void ram(int _pid);
 void disc();
 
 void imprimirResultadoCpu(int vec[]);
-void imprimirResultadoCpuPID(int vec[]);
+void imprimirResultadoCpuPID(int vec[], int _pid);
 
 int main(int argc, char*argv[]){
 
@@ -82,7 +82,7 @@ void cpu(int _pid){
             imprimirResultadoCpu(vec);
         }
         else{
-
+            imprimirResultadoCpuPID(vec, _pid);
         }
     }
 }
@@ -120,6 +120,9 @@ void imprimirResultadoCpu(int vec[]){
     porcentaje *= 100;
     printf("El porcentaje de uso del CPU es de: %f\n", porcentaje);
 }
-void imprimirResultadoCpuPID(int vec[]){
-    
+void imprimirResultadoCpuPID(int vec[], int _pid){
+    double porcentaje = 0.0;
+    close(vec[1]);
+    read(vec[0], &porcentaje, sizeof(porcentaje));
+    printf("El porcentaje de uso del CPU del proceso con PID: %d es de: %f\n", _pid, porcentaje);
 }

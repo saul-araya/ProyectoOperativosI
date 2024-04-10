@@ -4,10 +4,12 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/sysinfo.h>
 
 unsigned long long idle;
 
 long long tiempo_cpu();
+void nombreProceso(int _pid, char* nombre);
 double percent_total_cpu_ussage();
 double percent_cpu_ussage_pid(int pid);
 
@@ -15,10 +17,14 @@ int main(int argc, char*argv[]){
     int pid = atoi(argv[1]);
     int pipe = atoi(argv[2]);
     double porcentaje = 0.0;
+    char nombre[1024];
 
     if(pid > 0){
         porcentaje = percent_cpu_ussage_pid(pid);
+        nombreProceso(pid, nombre);
+        //printf(nombre);
         write(pipe, &porcentaje, sizeof(porcentaje));
+        write(pipe, &nombre, sizeof(nombre));
     }
     else{
         porcentaje = percent_total_cpu_ussage();
@@ -45,11 +51,11 @@ double percent_cpu_ussage_pid(int pid){
     
     fclose(archivo);
 
-    long tiempo_uso_pid = utime + stime + cutime + cstime;
+    long tiempo_uso_pid = (utime + stime + cutime + cstime);
 
     long long tiempoTotal = tiempo_cpu();
 
-    return (double)100*((double)tiempo_uso_pid / (double)tiempoTotal);
+    return ((double)100*((double)tiempo_uso_pid / (double)tiempoTotal)); //se multiplica por 300 para igual a los 5 minutos
 }
 
 double percent_total_cpu_ussage(){
@@ -76,4 +82,21 @@ long long tiempo_cpu(){
 
     tiempoTotal = user + nice + system + idle + iowait + irq + softirq + steal + guest + guest_nice;
     return tiempoTotal; //se retorna el tiempo total de uso del cpu, desde que se inicio, contando el tiempo muerto del cpu*/
+}
+void nombreProceso(int _pid, char* nombre){
+    FILE *archivo;
+    char linea[128];
+    char ruta[64];
+    
+    sprintf(ruta, "/proc/%d/stat", _pid);  //Lo que va a hacer esta funcion es que va a poner el valor del pid que se ingreso en el medio de la ruta para poder accesar a la informacion de dicho proceso
+
+    archivo = fopen(ruta, "r");
+    if(archivo==NULL){
+        printf("ERROR");
+    }
+    fgets(linea, sizeof(linea), archivo);
+
+    fclose(archivo);
+
+    sscanf(linea, "%*d (%[^)])", nombre);
 }

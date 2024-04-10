@@ -49,6 +49,8 @@ int option(char* argument){
     else if(strcmp(argument, "disc")==0){
         return 3;
     }
+
+    return 0;
 }
 
 void cpu(int _pid){
@@ -115,6 +117,7 @@ void imprimirResultadoCpu(int vec[]){
     double porcentaje = 0.0;
     close(vec[1]);
     read(vec[0], &porcentaje, sizeof(porcentaje));
+    porcentaje *= 100;
     printf("El porcentaje de uso del CPU es de: %f\n", porcentaje);
 }
 void imprimirResultadoCpuPID(int vec[]){

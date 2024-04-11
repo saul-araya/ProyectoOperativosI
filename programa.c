@@ -118,16 +118,36 @@ void cpu(int _pid){
     }
 }
 void ram(int _pid){
+    int vec[2];
+
+    if(pipe(vec))
+    {
+        printf("Error al crear la tubería en el monitor de memoria RAM");
+        exit(1);
+    }
+
     pid_t pid = fork();
     if(pid < 0){
         printf("Error\n");
     }
     if(pid==0){
-        printf("HIJO\n");
+        close(vec[0]);
+
+        char pid_caracter[20];
+        char pipe[20];
+
+        sprintf(pid_caracter, "%d", _pid);
+        sprintf(pipe, "%d", vec[1]);
+
+        char* arguments[] = {"ram", pid_caracter, pipe, NULL};
+
+        execv("./ram", arguments);
+
     }
     else{
         wait(NULL);
-        printf("padre\n");
+        close(vec[1]);
+        printf("padre: Hijo RAM finalizo\n");
     }
 }
 void disc(int parametro){

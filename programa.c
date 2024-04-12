@@ -19,7 +19,14 @@ void imprimir_result_disc_lib_mib(int vec[]);
 void imprimir_result_disc_uti_gib(int vec[]);
 void imprimir_result_disc_lib_gib(int vec[]);
 
+void man();
+
 int main(int argc, char*argv[]){
+
+    if(argc==1){
+        man();
+        return 0;
+    }
 
     int opc = option(argv[1]);
     int pid = 0, discArg = 0;
@@ -33,15 +40,12 @@ int main(int argc, char*argv[]){
 
     switch(option(argv[1])){
         case 1:
-            printf("CPU\n");
             cpu(pid);
             break;
         case 2:
-            printf("RAM\n");
             ram(pid);
             break;
         case 3:
-            printf("DISC\n");
             disc(discArg);
             break;
         default:
@@ -209,26 +213,48 @@ void imprimirResultadoCpuPID(int vec[], int _pid){
     printf("Porcentaje de uso del CPU: %f\n", porcentaje);
 }
 void imprimir_result_disc_uti_mib(int vec[]){
-    double porcentaje=0.0;
+    double valores[3];
     close(vec[1]);
-    read(vec[0], &porcentaje, sizeof(porcentaje));
-    printf("Porcentaje de utilizacion total del disco en MiB es de: %2.fM%%\n", porcentaje);
+    read(vec[0], &valores, sizeof(valores));
+    printf("Tamano en MiB de la cantidad usada del disco: %2.fM\n", valores[1]);
+    printf("Tamano en MiB del espacio total del disco: %2.fM\n", valores[2]);
+    printf("Porcentaje de utilizacion total del disco en MiB es de: %2.f%%\n", valores[0]);
 }
 void imprimir_result_disc_lib_mib(int vec[]){
-    double porcentaje = 0.0;
+    double valores[3];
     close(vec[1]);
-    read(vec[0], &porcentaje, sizeof(porcentaje));
-    printf("Porcentaje libre total del disco en MiB es de: %2.fM%%\n", porcentaje);
+    read(vec[0], &valores, sizeof(valores));
+    printf("Tamano en MiB de la cantidad libre del disco: %2.fM\n", valores[1]);
+    printf("Tamano en MiB del espacio total del disco: %2.fM\n", valores[2]);
+    printf("Porcentaje libre del disco en MiB es de: %2.f%%\n", valores[0]);
 }
 void imprimir_result_disc_uti_gib(int vec[]){
-    double porcentaje = 0.0;
+    double valores[3];
     close(vec[1]);
-    read(vec[0], &porcentaje, sizeof(porcentaje));
-    printf("Porcentaje de utilizacion total del disco en GiB es de: %2.fG%%\n", porcentaje);
+    read(vec[0], &valores, sizeof(valores));
+    printf("Tamano en GiB de la cantidad usada del disco: %2.fG\n", valores[1]);
+    printf("Tamano en GiB del espacio total del disco: %2.fG\n", valores[2]);
+    printf("Porcentaje de utilizacion del disco en GiB es de: %2.f%%\n", valores[0]);
 }
 void imprimir_result_disc_lib_gib(int vec[]){
-    double porcentaje = 0.0;
+    double valores[3];
     close(vec[1]);
-    read(vec[0], &porcentaje, sizeof(porcentaje));
-    printf("Porcentaje libre total del disco en GiB es de: %2.fG%%\n", porcentaje);
+    read(vec[0], &valores, sizeof(valores));
+    printf("Tamano en GiB de la cantidad libre del disco: %2.fG\n", valores[1]);
+    printf("Tamano en GiB del espacio total del disco: %2.fG\n", valores[2]);
+    printf("Porcentaje libre del disco en GiB es de: %2.f%%\n", valores[0]);
+}
+void man(){
+    printf("---------------------------How to Use---------------------------\n");
+    printf("CPU:\n");
+    printf("\tTotal CPU usage percentage: \t./programa cpu\n");
+    printf("\tUsage percentage per process: \t./programa cpu [PID]\n");
+    printf("RAM:\n");
+    printf("\tRAM:\n");
+    printf("\tRAM:\n");
+    printf("Disk:\n");
+    printf("\tDisk usage percentage in MiB: \t./programa disc -tm\n");
+    printf("\tDisk usage percentage in GiB: \t./programa disc -tg\n");
+    printf("\tDisk free percentage in MiB: \t./programa disc -lm\n");
+    printf("\tDisk free percentage in GiB: \t./programa disc -lg\n");
 }

@@ -6,32 +6,34 @@
 #include <string.h>
 #include <sys/sysinfo.h>
 
-double porcentajeUsoMiB();
-double porcentajeLibreMib();
-double porcentajeUsoGiB();
-double porcentajeLibreGiB();
+double valores[3];
+
+void porcentajeUsoMiB();
+void porcentajeLibreMib();
+void porcentajeUsoGiB();
+void porcentajeLibreGiB();
 
 int main(int agrc, char* argv[]){
-    double porcentaje = 0.0;
+    double porcentaje;
     int pipe = atoi(argv[2]);
     int opc = atoi(argv[1]);
 
     switch(opc){
         case 1:
-            porcentaje = porcentajeUsoMiB();
-            write(pipe, &porcentaje, sizeof(porcentaje));
+            porcentajeUsoMiB();
+            write(pipe, &valores, sizeof(porcentaje) * 3);
             break;
         case 2:
-            porcentaje = porcentajeUsoGiB();
-            write(pipe, &porcentaje, sizeof(porcentaje));
+            porcentajeUsoGiB();
+            write(pipe, &valores, sizeof(porcentaje) * 3);
             break;
         case 3:
-            porcentaje = porcentajeLibreMib();
-            write(pipe, &porcentaje, sizeof(porcentaje));
+            porcentajeLibreMib();
+            write(pipe, &valores, sizeof(porcentaje) * 3);
             break;
         case 4:
-            porcentaje = porcentajeLibreGiB();
-            write(pipe, &porcentaje, sizeof(porcentaje));
+            porcentajeLibreGiB();
+            write(pipe, &valores, sizeof(porcentaje) * 3);
             break;
         default:
             break;
@@ -39,11 +41,11 @@ int main(int agrc, char* argv[]){
     return 0;
 }
 
-double porcentajeUsoMiB(){
+void porcentajeUsoMiB(){
     FILE* archivo;
     char comandoDF[50];
     char linea[1024];
-    double tamanoTotal = 0.0, tamanoUsado = 0.0;
+    double tamanoTotal = 0.0, tamanoUsado = 0.0, porcentaje=0.0;
 
     archivo = popen("df -BM /mnt/c", "r");  //Aqui se ejecuta el comando df -MB para ver las cantidades de uso del disco y se le pega la ruta del disco que se va a examinar en mi caso el c porque es el unico que tengo en esta pc
     if(archivo == NULL){
@@ -56,16 +58,21 @@ double porcentajeUsoMiB(){
 
     pclose(archivo);
     sscanf(linea, "%*s %lf %*s %lf", &tamanoTotal, &tamanoUsado);
-    return 100 * (tamanoUsado / tamanoTotal);
+
+    porcentaje = 100 * (tamanoUsado / tamanoTotal); 
+
+    valores[0] = porcentaje;
+    valores[1] = tamanoUsado;
+    valores[2] = tamanoTotal;
 }
-double porcentajeLibreMib(){
+void porcentajeLibreMib(){
 
     //Este metodo es lo mismo que el otro practicamente, solo que aqui en lugar de leer del comando el valor de cantidad usada se va a leer el de cantidad libre y ya
 
     FILE* archivo;
     char comandoDF[50];
     char linea[1024];
-    double tamanoTotal = 0.0, tamanoLibre = 0.0;
+    double tamanoTotal = 0.0, tamanoLibre = 0.0, porcentaje=0.0;
 
     archivo = popen("df -BM /mnt/c", "r");  
     if(archivo == NULL){
@@ -79,13 +86,17 @@ double porcentajeLibreMib(){
     pclose(archivo);
     sscanf(linea, "%*s %lf %*s %*s %lf", &tamanoTotal, &tamanoLibre);
 
-    return 100 * (tamanoLibre / tamanoTotal);
+    porcentaje = 100 * (tamanoLibre / tamanoTotal); 
+
+    valores[0] = porcentaje;
+    valores[1] = tamanoLibre;
+    valores[2] = tamanoTotal;
 }
-double porcentajeUsoGiB(){
+void porcentajeUsoGiB(){
     FILE* archivo;
     char comandoDF[50];
     char linea[1024];
-    double porcentaje=0.0;
+    double tamanoUsado=0.0, tamanoTotal=0.0, porcentaje=0.0;
     
     archivo = popen("df -BG /mnt/c", "r");
     if(archivo == NULL){
@@ -98,16 +109,20 @@ double porcentajeUsoGiB(){
 
     pclose(archivo);
 
-    sscanf(linea, "%*s %*s %*s %*s %lf", &porcentaje);
+    sscanf(linea, "%*s %lf %*s %lf", &tamanoTotal, &tamanoUsado);
 
-    return porcentaje;
+    porcentaje = 100 * (tamanoUsado / tamanoTotal);
+    
+    valores[0] = porcentaje;
+    valores[1] = tamanoUsado;
+    valores[2] = tamanoTotal;
 }
 
-double porcentajeLibreGiB(){
+void porcentajeLibreGiB(){
     FILE* archivo;
     char comandoDF[50];
     char linea[1024];
-    double total = 0.0, cantidadLibre=0.0;
+    double total = 0.0, cantidadLibre=0.0, porcentaje=0.0;
     
     archivo = popen("df -BG /mnt/c", "r");
     if(archivo == NULL){
@@ -122,5 +137,9 @@ double porcentajeLibreGiB(){
 
     sscanf(linea, "%*s %lf %*s %*s %lf", &total, &cantidadLibre);
 
-    return 100*(cantidadLibre / total);
+    porcentaje = 100*(cantidadLibre / total);
+
+    valores[0] = porcentaje;
+    valores[1] = cantidadLibre;
+    valores[2] = total;
 }

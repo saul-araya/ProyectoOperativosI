@@ -8,6 +8,10 @@
 int option(char* argument);
 int discoParametro(char* argument);
 
+//df disco
+//free memoria
+
+
 void cpu(int _pid);
 void ram(int _pid);
 void disc(int parametro);
@@ -200,7 +204,7 @@ void imprimirResultadoCpu(int vec[]){
     double porcentaje = 0.0;
     close(vec[1]);
     read(vec[0], &porcentaje, sizeof(porcentaje));
-    printf("El porcentaje de uso del CPU es de: %f\n", porcentaje);
+    printf("El porcentaje de uso del CPU es de: %.1lf%%\n", porcentaje);
 }
 void imprimirResultadoCpuPID(int vec[], int _pid){
     double porcentaje = 0.0;

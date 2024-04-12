@@ -8,7 +8,7 @@
 
 unsigned long long idle;
 
-long long tiempo_cpu();
+double tiempo_cpu();
 void nombreProceso(int _pid, char* nombre);
 double percent_total_cpu_ussage();
 double percent_cpu_ussage_pid(int pid);
@@ -27,7 +27,7 @@ int main(int argc, char*argv[]){
         write(pipe, &nombre, sizeof(nombre));
     }
     else{
-        porcentaje = percent_total_cpu_ussage();
+        porcentaje = tiempo_cpu();
         write(pipe, &porcentaje, sizeof(porcentaje));
     }
     return 0;
@@ -63,25 +63,23 @@ double percent_total_cpu_ussage(){
     return (double)(100.0*(((double)tiempoTotal - idle) / (double)tiempoTotal));
 }
 
-long long tiempo_cpu(){
+double tiempo_cpu(){
     FILE *archivo;
     char linea[128];
     long long user, nice, system, iowait, irq, softirq, steal, guest, guest_nice;
     long long tiempoTotal;
-    float porcentaje;
+    double usuario=0.0, sistema=0.0;
 
-    archivo = fopen("/proc/stat", "r");
+    archivo = popen("top -b -n 1 | grep 'Cpu(s)'", "r");
     if(archivo == NULL){
         printf("Error\n");
-    } 
-    
-    fgets(linea, sizeof(linea), archivo);
-    fclose(archivo);
-    sscanf(linea, "cpu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu", 
-       &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal, &guest, &guest_nice);
+    }
 
-    tiempoTotal = user + nice + system + idle + iowait + irq + softirq + steal + guest + guest_nice;
-    return tiempoTotal; //se retorna el tiempo total de uso del cpu, desde que se inicio, contando el tiempo muerto del cpu*/
+    fgets(linea, sizeof(linea), archivo);
+    sscanf(linea, "%*s %lf %*s %lf", &usuario, &sistema);
+
+    double porcentaje = usuario + sistema;
+    return porcentaje;
 }
 void nombreProceso(int _pid, char* nombre){
     FILE *archivo;

@@ -10,7 +10,7 @@ unsigned long long idle;
 
 double tiempo_cpu();
 void nombreProceso(int _pid, char* nombre);
-double percent_total_cpu_ussage();
+long tiempoTotalCpu();
 double percent_cpu_ussage_pid(int pid);
 
 int main(int argc, char*argv[]){
@@ -22,7 +22,6 @@ int main(int argc, char*argv[]){
     if(pid > 0){
         porcentaje = percent_cpu_ussage_pid(pid);
         nombreProceso(pid, nombre);
-        //printf(nombre);
         write(pipe, &porcentaje, sizeof(porcentaje));
         write(pipe, &nombre, sizeof(nombre));
     }
@@ -32,12 +31,29 @@ int main(int argc, char*argv[]){
     }
     return 0;
 }
+long tiempoTotalCpu(){
+    FILE *archivo;
+    char linea[128];
+    long ticksPorSegundoCpu = sysconf(_SC_CLK_TCK);
+    unsigned long usuario, nice, sistema, idle, steal, guest, guest_nice;
 
+    archivo = fopen("/proc/stat", "r");
+    if(archivo==NULL){
+        printf("ERROR");
+    }
+    
+    fscanf(archivo, "cpu %lu %lu %lu %lu %*u %*u %*u %lu %lu %lu", &usuario, &nice, &sistema, &idle, &steal, &guest, &guest_nice);
+    
+    return usuario + nice + sistema + idle + steal + guest + guest_nice;
+}
 double percent_cpu_ussage_pid(int pid){
     char ruta[64];
     FILE *archivo;
-    unsigned long utime, stime, cutime, cstime;
-    double porcentaje;
+
+    unsigned long utime, stime, jiffiesTotales = 0.0;;
+    long ticksPorSegundoCpu = sysconf(_SC_CLK_TCK); //Esto me devuelve el valor jiffies del CPU por segundo, me va a servir para poder hacer la conversion de jiffies a segundos
+
+    double segundosProceso = 0.0, porcentaje = 0.0;
 
     sprintf(ruta, "/proc/%d/stat", pid);  //Lo que va a hacer esta funcion es que va a poner el valor del pid que se ingreso en el medio de la ruta para poder accesar a la informacion de dicho proceso
 
@@ -46,23 +62,24 @@ double percent_cpu_ussage_pid(int pid){
         printf("ERROR");
     }
 
-    fscanf(archivo, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %lu %lu %lu %lu", 
-           &utime, &stime, &cutime, &cstime);
+    fscanf(archivo, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", 
+           &utime, &stime);
     
     fclose(archivo);
 
-    long tiempo_uso_pid = (utime + stime + cutime + cstime);
+    jiffiesTotales = utime + stime;
+    segundosProceso = (double)(jiffiesTotales) / ticksPorSegundoCpu;
 
-    long long tiempoTotal = tiempo_cpu();
+    segundosProceso = segundosProceso * 300.00; //Estos 300 son equivalente a los 5 minutos (es una estimacion ya que en si el tiempo de uso de cpu puede ir variando en poco tiempo)
 
-    return ((double)100*((double)tiempo_uso_pid / (double)tiempoTotal)); //se multiplica por 300 para igual a los 5 minutos
+    long tiempoTotalCpuJ = tiempoTotalCpu();
+
+    double tiempoTotalCpuSegundos = (double)tiempoTotalCpuJ / ticksPorSegundoCpu;   //Se hace el mismo procedimiento para calcular ahora el tiempo de uso total del cpu en segundos para poder calcular el procentaje.
+
+    porcentaje = 100*(segundosProceso / tiempoTotalCpuSegundos);
+
+    return porcentaje;
 }
-
-double percent_total_cpu_ussage(){
-    long long tiempoTotal = tiempo_cpu();
-    return (double)(100.0*(((double)tiempoTotal - idle) / (double)tiempoTotal));
-}
-
 double tiempo_cpu(){
     FILE *archivo;
     char linea[128];

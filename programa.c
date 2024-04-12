@@ -214,7 +214,7 @@ void imprimirResultadoCpuPID(int vec[], int _pid){
     read(vec[0], &nombre, sizeof(nombre));
     printf("Nombre del proceso: %s\n", nombre);
     printf("PID: %d\n", _pid);
-    printf("Porcentaje de uso del CPU: %f\n", porcentaje);
+    printf("Porcentaje de uso del CPU de este proceso en los ultimos 5 minutos es de: %.1f%%\n", porcentaje);
 }
 void imprimir_result_disc_uti_mib(int vec[]){
     double valores[3];

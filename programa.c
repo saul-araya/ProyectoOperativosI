@@ -4,6 +4,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
+#include "utiles.h"
+#include <signal.h>
 
 int option(char* argument);
 int discoParametro(char* argument);
@@ -11,19 +13,29 @@ int discoParametro(char* argument);
 //df disco
 //free memoria
 
-
+/* FUNCIONES DE LAS OPCIONES DE MONITOREO */
 void cpu(int _pid);
 void ram(int _pid);
 void disc(int parametro);
 
+/* IMPRESION DE LOS VALORES DEL MONITOR DE CPU */
 void imprimirResultadoCpu(int vec[]);
 void imprimirResultadoCpuPID(int vec[], int _pid);
+
+/* IMPRESION DE LOS VALORES DEL MONITOR DE DISCO */
 void imprimir_result_disc_uti_mib(int vec[]);
 void imprimir_result_disc_lib_mib(int vec[]);
 void imprimir_result_disc_uti_gib(int vec[]);
 void imprimir_result_disc_lib_gib(int vec[]);
 
+/* IMPRESION DE LOS VALORES DEL MONITOR RAM*/
+void imprimirResultadoRAM(int vec[]);
+
+void imprimirResultadoRamPID(int vec[], int pid);
+
 void man();
+
+pid_t ram_pid;
 
 int main(int argc, char*argv[]){
 
@@ -134,11 +146,11 @@ void ram(int _pid){
         exit(1);
     }
 
-    pid_t pid = fork();
-    if(pid < 0){
+    ram_pid = fork();
+    if(ram_pid < 0){
         printf("Error\n");
     }
-    if(pid==0){
+    if(ram_pid==0){
         close(vec[0]);
 
         char pid_caracter[20];
@@ -149,12 +161,15 @@ void ram(int _pid){
 
         char* arguments[] = {"ram", pid_caracter, pipe, NULL};
 
-        execv("usr/local/bin/ram", arguments);
+        execv("/usr/local/bin/ram", arguments);
 
     }
     else{
         wait(NULL);
         close(vec[1]);
+
+        imprimirResultadoRAM(vec);
+
         printf("padre: Hijo RAM finalizo\n");
     }
 }
@@ -248,6 +263,29 @@ void imprimir_result_disc_lib_gib(int vec[]){
     printf("Tamano en GiB del espacio total del disco: %2.fG\n", valores[2]);
     printf("Porcentaje libre del disco en GiB es de: %2.f%%\n", valores[0]);
 }
+
+void imprimirResultadoRAM(int vec[]){
+    close(vec[1]);
+    double porcentajeF = 0.0;
+
+    proceso_info * aux = (proceso_info*) malloc(sizeof(proceso_info));
+    
+    printf("|%-10s %-40s %-10s|\n", "PID", "Nombre del proceso", "MEM Fisica");
+    while(read(vec[0], aux, sizeof(proceso_info)) > 0){
+        printf("|%-10s %-40s %-10lf|\n", aux->pid, aux->nombre, aux->porcentaje);
+        porcentajeF += aux->porcentaje;
+    }
+
+    if(read <= 0){
+        printf("\nNo hay procesos que leer\n");
+    }
+
+    printf("\nPorcentaje de uso total de la memoria fìsica: %lf\n", porcentajeF);
+    free(aux);
+
+}
+
+
 void man(){
     printf("---------------------------How to Use---------------------------\n");
     printf("CPU:\n");

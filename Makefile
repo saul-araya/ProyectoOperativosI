@@ -19,3 +19,4 @@ disco.o: disco.c
 
 clean: 
 	rm *.o
+	sudo rm /usr/local/bin/cpu /usr/local/bin/programa /usr/local/bin/ram /usr/local/bin/disco

@@ -3,6 +3,7 @@ output: programa.o ram.o cpu.o disco.o
 	gcc ram.o -o ram -Wall
 	gcc cpu.o -o cpu -Wall
 	gcc disco.o -o disco -Wall
+	sudo mv disco ram cpu programa /usr/local/bin
 
 programa.o: programa.c
 	gcc -c programa.c
@@ -17,7 +18,4 @@ disco.o: disco.c
 	gcc -c disco.c
 
 clean: 
-	rm *.o programa cpu ram disco
-
-run: ./programa
-	./programa $(ARGS)
+	rm *.o

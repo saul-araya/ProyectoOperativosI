@@ -112,7 +112,7 @@ void cpu(int _pid){
         sprintf(pipe, "%d", vec[1]);
 
         char* arguments[] = {"cpu", pid_caracter, pipe, NULL};
-        execv("./cpu", arguments);
+        execv("/usr/local/bin/cpu", arguments);
     }
     else{
         wait(NULL);
@@ -149,7 +149,7 @@ void ram(int _pid){
 
         char* arguments[] = {"ram", pid_caracter, pipe, NULL};
 
-        execv("./ram", arguments);
+        execv("usr/local/bin/ram", arguments);
 
     }
     else{
@@ -178,7 +178,7 @@ void disc(int parametro){
         sprintf(argumento, "%d", parametro);
 
         char* arguments[] = {"disco", argumento, pipe, NULL};
-        execv("./disco", arguments);
+        execv("/usr/local/bin/disco", arguments);
     }
     else{
         double porcentaje = 0.0;

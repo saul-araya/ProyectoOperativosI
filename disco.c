@@ -47,9 +47,9 @@ void porcentajeUsoMiB(){
     char linea[1024];
     double tamanoTotal = 0.0, tamanoUsado = 0.0, porcentaje=0.0;
 
-    archivo = popen("df -BM /mnt/c", "r");  //Aqui se ejecuta el comando df -MB para ver las cantidades de uso del disco y se le pega la ruta del disco que se va a examinar en mi caso el c porque es el unico que tengo en esta pc
+    archivo = popen("df -BM /", "r");  //Aqui se ejecuta el comando df -MB para ver las cantidades de uso del disco y se le pega la ruta del disco que se va a examinar en mi caso el c porque es el unico que tengo en esta pc
     if(archivo == NULL){
-        printf("\nError\n");
+        //printf("\nError\n");
     }
 
     for(int i = 0; i < 2; i++){     //Aqui se hace este ciclo porque como si uno corre el comando le van a salir dos lineas o mejor dicho filas, la primera es donde viene como a que pertenece cada numero y hasta la segunda ya vienen los numeros, entonces use el ciclo para poder saltarme esos titulos y leer la linea de los numeros
@@ -74,7 +74,7 @@ void porcentajeLibreMib(){
     char linea[1024];
     double tamanoTotal = 0.0, tamanoLibre = 0.0, porcentaje=0.0;
 
-    archivo = popen("df -BM /mnt/c", "r");  
+    archivo = popen("df -BM /", "r");  
     if(archivo == NULL){
         printf("\nError\n");
     }
@@ -98,7 +98,7 @@ void porcentajeUsoGiB(){
     char linea[1024];
     double tamanoUsado=0.0, tamanoTotal=0.0, porcentaje=0.0;
     
-    archivo = popen("df -BG /mnt/c", "r");
+    archivo = popen("df -BG /", "r");
     if(archivo == NULL){
         printf("\nError\n");
     }
@@ -124,7 +124,7 @@ void porcentajeLibreGiB(){
     char linea[1024];
     double total = 0.0, cantidadLibre=0.0, porcentaje=0.0;
     
-    archivo = popen("df -BG /mnt/c", "r");
+    archivo = popen("df -BG /", "r");
     if(archivo == NULL){
         printf("\nError\n");
     }

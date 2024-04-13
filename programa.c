@@ -237,7 +237,7 @@ void imprimir_result_disc_uti_mib(int vec[]){
     read(vec[0], &valores, sizeof(valores));
     printf("Tamano en MiB de la cantidad usada del disco: %2.fM\n", valores[1]);
     printf("Tamano en MiB del espacio total del disco: %2.fM\n", valores[2]);
-    printf("Porcentaje de utilizacion total del disco en MiB es de: %2.f%%\n", valores[0]);
+    printf("Porcentaje de utilizacion total del disco en MiB es de: %.2f%%\n", valores[0]);
 }
 void imprimir_result_disc_lib_mib(int vec[]){
     double valores[3];
@@ -245,7 +245,7 @@ void imprimir_result_disc_lib_mib(int vec[]){
     read(vec[0], &valores, sizeof(valores));
     printf("Tamano en MiB de la cantidad libre del disco: %2.fM\n", valores[1]);
     printf("Tamano en MiB del espacio total del disco: %2.fM\n", valores[2]);
-    printf("Porcentaje libre del disco en MiB es de: %2.f%%\n", valores[0]);
+    printf("Porcentaje libre del disco en MiB es de: %.2f%%\n", valores[0]);
 }
 void imprimir_result_disc_uti_gib(int vec[]){
     double valores[3];
@@ -253,7 +253,7 @@ void imprimir_result_disc_uti_gib(int vec[]){
     read(vec[0], &valores, sizeof(valores));
     printf("Tamano en GiB de la cantidad usada del disco: %2.fG\n", valores[1]);
     printf("Tamano en GiB del espacio total del disco: %2.fG\n", valores[2]);
-    printf("Porcentaje de utilizacion del disco en GiB es de: %2.f%%\n", valores[0]);
+    printf("Porcentaje de utilizacion del disco en GiB es de: %.2f%%\n", valores[0]);
 }
 void imprimir_result_disc_lib_gib(int vec[]){
     double valores[3];
@@ -261,7 +261,7 @@ void imprimir_result_disc_lib_gib(int vec[]){
     read(vec[0], &valores, sizeof(valores));
     printf("Tamano en GiB de la cantidad libre del disco: %2.fG\n", valores[1]);
     printf("Tamano en GiB del espacio total del disco: %2.fG\n", valores[2]);
-    printf("Porcentaje libre del disco en GiB es de: %2.f%%\n", valores[0]);
+    printf("Porcentaje libre del disco en GiB es de: %.2f%%\n", valores[0]);
 }
 
 void imprimirResultadoRAM(int vec[]){

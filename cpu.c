@@ -39,7 +39,7 @@ long tiempoTotalCpu(){
 
     archivo = fopen("/proc/stat", "r");
     if(archivo==NULL){
-        printf("ERROR");
+        exit(EXIT_FAILURE);
     }
     
     fscanf(archivo, "cpu %lu %lu %lu %lu %*u %*u %*u %lu %lu %lu", &usuario, &nice, &sistema, &idle, &steal, &guest, &guest_nice);
@@ -59,7 +59,7 @@ double percent_cpu_ussage_pid(int pid){
 
     archivo = fopen(ruta, "r");
     if(archivo==NULL){
-        printf("ERROR");
+        exit(EXIT_FAILURE);
     }
 
     fscanf(archivo, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", 
@@ -76,6 +76,8 @@ double percent_cpu_ussage_pid(int pid){
 
     double tiempoTotalCpuSegundos = (double)tiempoTotalCpuJ / ticksPorSegundoCpu;   //Se hace el mismo procedimiento para calcular ahora el tiempo de uso total del cpu en segundos para poder calcular el procentaje.
 
+    tiempoTotalCpuSegundos = tiempoTotalCpuSegundos * 300;  //Tambien se debe de estimar el uso del cpu en 5 minutos
+
     porcentaje = 100*(segundosProceso / tiempoTotalCpuSegundos);
 
     return porcentaje;
@@ -89,7 +91,7 @@ double tiempo_cpu(){
 
     archivo = popen("top -b -n 1 | grep 'Cpu(s)'", "r");
     if(archivo == NULL){
-        printf("Error\n");
+        exit(EXIT_FAILURE);
     }
 
     fgets(linea, sizeof(linea), archivo);
@@ -107,7 +109,7 @@ void nombreProceso(int _pid, char* nombre){
 
     archivo = fopen(ruta, "r");
     if(archivo==NULL){
-        printf("ERROR");
+        exit(EXIT_FAILURE);
     }
     fgets(linea, sizeof(linea), archivo);
 

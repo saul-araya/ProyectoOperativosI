@@ -49,7 +49,7 @@ void porcentajeUsoMiB(){
 
     archivo = popen("df -BM /", "r");  //Aqui se ejecuta el comando df -MB para ver las cantidades de uso del disco y se le pega la ruta del disco que se va a examinar en mi caso el c porque es el unico que tengo en esta pc
     if(archivo == NULL){
-        //printf("\nError\n");
+        exit(EXIT_FAILURE);
     }
 
     for(int i = 0; i < 2; i++){     //Aqui se hace este ciclo porque como si uno corre el comando le van a salir dos lineas o mejor dicho filas, la primera es donde viene como a que pertenece cada numero y hasta la segunda ya vienen los numeros, entonces use el ciclo para poder saltarme esos titulos y leer la linea de los numeros
@@ -76,7 +76,7 @@ void porcentajeLibreMib(){
 
     archivo = popen("df -BM /", "r");  
     if(archivo == NULL){
-        printf("\nError\n");
+        exit(EXIT_FAILURE);
     }
 
     for(int i = 0; i < 2; i++){
@@ -100,7 +100,7 @@ void porcentajeUsoGiB(){
     
     archivo = popen("df -BG /", "r");
     if(archivo == NULL){
-        printf("\nError\n");
+        exit(EXIT_FAILURE);
     }
 
     for(int i = 0; i < 2; i++){
@@ -126,7 +126,7 @@ void porcentajeLibreGiB(){
     
     archivo = popen("df -BG /", "r");
     if(archivo == NULL){
-        printf("\nError\n");
+        exit(EXIT_FAILURE);
     }
 
     for(int i = 0; i < 2; i++){

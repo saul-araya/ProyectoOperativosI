@@ -4,7 +4,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
-#include "utiles.h"
 #include <signal.h>
 
 int option(char* argument);
@@ -15,7 +14,7 @@ int discoParametro(char* argument);
 
 /* FUNCIONES DE LAS OPCIONES DE MONITOREO */
 void cpu(int _pid);
-void ram(int _pid);
+void ram(int _pid, char* opcion);
 void disc(int parametro);
 
 /* IMPRESION DE LOS VALORES DEL MONITOR DE CPU */
@@ -31,11 +30,9 @@ void imprimir_result_disc_lib_gib(int vec[]);
 /* IMPRESION DE LOS VALORES DEL MONITOR RAM*/
 void imprimirResultadoRAM(int vec[]);
 
-void imprimirResultadoRamPID(int vec[], int pid);
+void imprimirResultadoRamPID(int vec[]);
 
 void man();
-
-pid_t ram_pid;
 
 int main(int argc, char*argv[]){
 
@@ -46,12 +43,18 @@ int main(int argc, char*argv[]){
 
     int opc = option(argv[1]);
     int pid = 0, discArg = 0;
+    char *argOpc = "";
 
     if(argc == 3 && opc == 1){
         pid = atoi(argv[2]);
     }
     else if(argc == 3 && opc == 3){
         discArg = discoParametro(argv[2]);
+    }else if(argc == 4 && opc == 2){
+        pid = atoi(argv[3]);
+        argOpc = argv[2];
+    }else if(argc == 3 && opc == 2){
+        argOpc = argv[2];
     }
 
     switch(option(argv[1])){
@@ -59,7 +62,7 @@ int main(int argc, char*argv[]){
             cpu(pid);
             break;
         case 2:
-            ram(pid);
+            ram(pid, argOpc);
             break;
         case 3:
             disc(discArg);
@@ -104,6 +107,18 @@ int discoParametro(char* argument){
     }
 }
 
+int ramParametro(char* argument){
+    if(strcmp(argument, "-r")==0){
+        return 1;
+    }
+    else if(strcmp(argument, "-v")==0){
+        return 2;
+    }
+    else{
+        return 0;
+    }
+}
+
 void cpu(int _pid){
     int vec[2];
 
@@ -137,7 +152,7 @@ void cpu(int _pid){
         }
     }
 }
-void ram(int _pid){
+void ram(int _pid, char* argOpc){
     int vec[2];
 
     if(pipe(vec))
@@ -146,33 +161,55 @@ void ram(int _pid){
         exit(1);
     }
 
-    ram_pid = fork();
-    if(ram_pid < 0){
+    pid_t pid = fork();
+    if(pid < 0){
         printf("Error\n");
     }
-    if(ram_pid==0){
+    if(pid==0){
         close(vec[0]);
 
         char pid_caracter[20];
         char pipe[20];
+        char pid_programa[20];
 
         sprintf(pid_caracter, "%d", _pid);
         sprintf(pipe, "%d", vec[1]);
+        
 
-        char* arguments[] = {"ram", pid_caracter, pipe, NULL};
+        if(_pid <= 0 && (strcmp(argOpc, "-r") == 0 || strcmp(argOpc, "-v") == 0)){
+            char opcion[20];
+            sprintf(opcion, "%s", argOpc);
 
-        execv("/usr/local/bin/ram", arguments);
+            dup2(vec[1], STDOUT_FILENO);
+            close(vec[1]);
+
+            char* arguments[] = {"ram", pid_caracter, opcion, pipe, NULL};
+
+            execv("/usr/local/bin/ram", arguments);
+        }else if(strcmp(argOpc, "-r") == 0 || strcmp(argOpc, "-v") == 0){
+            char opcion[20];
+            sprintf(opcion, "%s", argOpc);
+
+            char* arguments[] = {"ram", pid_caracter, opcion, pipe, NULL};
+
+            execv("/usr/local/bin/ram", arguments);
+        }else{
+            printf("Argumentos para ram son (-r [opcional=pid] || -v [opcional=pid])\n");
+            exit(1);
+        }
+        
 
     }
     else{
         wait(NULL);
-        close(vec[1]);
-
-        imprimirResultadoRAM(vec);
-
-        printf("padre: Hijo RAM finalizo\n");
+        if(_pid <= 0){
+            imprimirResultadoRAM(vec);
+        }else{
+            imprimirResultadoRamPID(vec);
+        }
     }
 }
+
 void disc(int parametro){
     int vec[2];
 
@@ -266,37 +303,38 @@ void imprimir_result_disc_lib_gib(int vec[]){
 
 void imprimirResultadoRAM(int vec[]){
     close(vec[1]);
-    double porcentajeF = 0.0;
-
-    proceso_info * aux = (proceso_info*) malloc(sizeof(proceso_info));
-    
-    printf("|%-10s %-40s %-10s|\n", "PID", "Nombre del proceso", "MEM Fisica");
-    while(read(vec[0], aux, sizeof(proceso_info)) > 0){
-        printf("|%-10s %-40s %-10lf|\n", aux->pid, aux->nombre, aux->porcentaje);
-        porcentajeF += aux->porcentaje;
+    char buffer[BUFSIZ];
+    ssize_t nbytes;
+   
+    while((nbytes = read(vec[0], buffer, sizeof(buffer))) > 0){
+        write(STDOUT_FILENO, buffer, nbytes);
     }
+    close(vec[0]);
 
-    if(read <= 0){
-        printf("\nNo hay procesos que leer\n");
-    }
+}
 
-    printf("\nPorcentaje de uso total de la memoria fìsica: %lf\n", porcentajeF);
-    free(aux);
+void imprimirResultadoRamPID(int vec[]){
+    char buffer[270];
+    close(vec[1]);
 
+    read(vec[0], buffer, sizeof(buffer));
+
+    printf("%s", buffer);
 }
 
 
 void man(){
     printf("---------------------------How to Use---------------------------\n");
     printf("CPU:\n");
-    printf("\tTotal CPU usage percentage: \t./programa cpu\n");
-    printf("\tUsage percentage per process: \t./programa cpu [PID]\n");
+    printf("\tTotal CPU usage percentage: \tprograma cpu\n");
+    printf("\tUsage percentage per process: \tprograma cpu [PID]\n");
     printf("RAM:\n");
-    printf("\tRAM:\n");
-    printf("\tRAM:\n");
+    printf("\tVmemory usage percentage: \tprograma ram -v\n");
+    printf("\tReal memory usage percentage: \tprograma ram -r\n");
+    printf("\tSpecify a process with PID: \tprograma ram -v [PID] | programa ram -r [PID]\n");
     printf("Disk:\n");
-    printf("\tDisk usage percentage in MiB: \t./programa disc -tm\n");
-    printf("\tDisk usage percentage in GiB: \t./programa disc -tg\n");
-    printf("\tDisk free percentage in MiB: \t./programa disc -lm\n");
-    printf("\tDisk free percentage in GiB: \t./programa disc -lg\n");
+    printf("\tDisk usage percentage in MiB: \tprograma disc -tm\n");
+    printf("\tDisk usage percentage in GiB: \tprograma disc -tg\n");
+    printf("\tDisk free percentage in MiB: \tprograma disc -lm\n");
+    printf("\tDisk free percentage in GiB: \tprograma disc -lg\n");
 }

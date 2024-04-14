@@ -10,37 +10,54 @@
 #include <signal.h>
 
 int filtrarCarpetaPID(char*);
-proceso_info * memoriaRealTotal();
+void memoriaTotal(StrategyRAM strategia, char* tipo);
 double memoriaRAMMB();
+void handlerRam(int senal){}
+double memoriaSwapMB();
+void memoriaPID(StrategyRAM strategia, int pid, char* tipo, int pipe);
 
 int main(int argc, char* argv[]){
+
     int pid = atoi(argv[1]);
-    int pipe = atoi(argv[2]);
+    char* opcion = argv[2];
+    int pipe = atoi(argv[3]);
+    char proceso_info[260];
 
+    StrategyRAM strategia;
+    
+    if(strcmp(opcion, "-v") == 0){
+        strategia.algoritmo = &memoriaVirtual;
+    }else{
+        strategia.algoritmo = &memoriaReal;
+    }   
 
-
-    proceso_info * resultado = memoriaRealTotal();
-    proceso_info * actual = resultado;
-
-    int i = 0;
-
-    while(actual != NULL && i < 60){
-        //printf("Leyendo datos\n");
-        //printf("Datos de la lista: %s, %s, %lf\n",actual->pid ,actual->nombre, actual->porcentaje);
-        write(pipe, actual, sizeof(proceso_info));
-        actual = actual->sig;
-        i++;
+    if(pid <= 0){
+        if(strcmp(opcion, "-v") == 0){
+            memoriaTotal(strategia, "Virtual");
+        }else{
+            
+            memoriaTotal(strategia, "Real");
+        }
+        
+    }else if(pid > 0){
+        if(strcmp(opcion, "-v")){
+            memoriaPID(strategia, pid, "Virtual", pipe);
+        }else{
+            memoriaPID(strategia, pid, "Real", pipe);
+        }
+    }else{
+        printf("\nError: argumentos no validos");
     }
     
-
     return 0;
 }
 
-proceso_info * memoriaRealTotal(){
+void memoriaTotal(StrategyRAM strategia, char* tipo){
     FILE* archivo;
+    FILE* statusAr;
     DIR *directorio_proc;
 
-    double memoriaTotal = memoriaRAMMB();
+    
 
     double porcentaje_virtual = 0.0;
     double psUtilizacion = 0.0;
@@ -50,15 +67,19 @@ proceso_info * memoriaRealTotal(){
     char *pid;
     char nombreProceso[100];
     char ruta[256];
-    unsigned long vmsize;
+    char rutaStatus[256];
     long rss;
-    //double porcentajeF = 0.0;
+    double porcentajeF = 0.0;
+    double memoriaSwap = memoriaSwapMB();
+    double memoriaTotal = memoriaRAMMB();
+    long swap_mem;
+    char buffer[120];
 
-    struct dirent* fichero;
-    proceso_info * ppio = NULL;
-    proceso_info * actual = NULL;
-    proceso_info * aux = NULL;
-    
+    struct dirent* fichero; 
+
+    char tipo_col[40];
+
+    sprintf(tipo_col, "%% memoria %s", tipo);
 
     directorio_proc = opendir("/proc/");
 
@@ -67,46 +88,52 @@ proceso_info * memoriaRealTotal(){
         exit(1);
     }
     
-    //printf("|%-10s %-40s %-10s|\n", "PID", "Nombre del proceso", "MEM Fisica");
+    printf("|%-10s %-40s %-22s|\n", "PID", "Nombre del proceso", tipo_col);
 
     while((fichero = readdir(directorio_proc)) != NULL){
         if(fichero->d_type == 4){
             if(!filtrarCarpetaPID(fichero->d_name)){
                 pid = fichero->d_name;
                 sprintf(ruta, "/proc/%s/stat", pid);
+                sprintf(rutaStatus, "cat /proc/%s/status | grep 'VmSwap:'", pid);
 
                 archivo = fopen(ruta, "r");
-                fscanf(archivo, "%*d (%[^)]) %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*lu %*lu %*lu %*lu %*ld %*ld %*ld %*ld %*ld %*llu %lu %ld",
-                    nombreProceso, &vmsize, &rss);
+                fscanf(archivo, "%*d (%[^)]) %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*lu %*lu %*lu %*lu %*ld %*ld %*ld %*ld %*ld %*llu %*lu %ld",
+                    nombreProceso, &rss);
                 fclose(archivo);
 
-                psUtilizacion = ((double) ((rss * tamPag)/(1024*1024)) / memoriaTotal)*100;
+                statusAr = popen(rutaStatus, "r");
+                fgets(buffer, 120, statusAr);
+                pclose(statusAr);
 
-                aux = (proceso_info *) malloc(sizeof(proceso_info));
-                    strcpy(aux->nombre, nombreProceso);
-                    strcpy(aux->pid, pid);
-                    
-                    aux->porcentaje = psUtilizacion;
-                    aux->sig = NULL;
+                sscanf(buffer, "%*s %ld", &swap_mem);
+
+
+                psUtilizacion = strategia.algoritmo(rss, tamPag, swap_mem, memoriaTotal, memoriaSwap);
+                porcentajeF += psUtilizacion;
                 
-                if(ppio == NULL){
-                    ppio = aux;
-                }else{
-                    actual->sig = aux; 
-                }
-
-                actual = aux;
-                //porcentajeF += psUtilizacion;
-
-                //printf("|%-10s %-40s %-10lf|\n", pid, nombreProceso, psUtilizacion);
-                //printf("PID: %s\nNombre: %s\nRSS: %ld\nPorcentaje: %lf\n\n", pid, nombreProceso, rss, psUtilizacion*100);
+                printf("|%-10s %-40s %10.2f%% %-10s|\n", pid, nombreProceso, psUtilizacion, " ");
                 
             }
         }
     }
-    //printf("\n::::::::::Porcentaje de uso total de la memoria fìsica: %lf\n", porcentajeF);
+    printf("\n-- Porcentaje total de uso de memoria %s: %.2f%%\n", tipo, porcentajeF);
+}
 
-    return ppio;
+double memoriaSwapMB(){
+    FILE * archivo;
+    char buffer[1024];
+    long swapTotal;
+    archivo = popen("free | grep 'Swap:'", "r");
+
+    fgets(buffer, 1024, archivo);
+
+    pclose(archivo);
+
+    sscanf(buffer, "%*s %ld", &swapTotal);
+
+    return (double) swapTotal / 1024;
+
 }
 
 int filtrarCarpetaPID(char* proc_fichero){
@@ -137,4 +164,47 @@ double memoriaRAMMB(){
 
 
     return memoriaRam;
+}
+
+void memoriaPID(StrategyRAM strategia, int pid, char* tipo, int pipe){
+    FILE* archivo;
+    FILE* statusAr;
+
+    char ruta[250];
+    char rutaStatus[250];
+    char nombreProceso[100];
+    long rss;
+    long tamPag = sysconf(_SC_PAGESIZE);
+    long swap_mem;
+    char buffer[200];
+    char datos[300];
+    char* ptr;
+
+    double memoriaTotal = memoriaRAMMB();
+    double memoriaSwap = memoriaSwapMB();
+
+
+    double porcentaje = 0.0;
+
+    sprintf(ruta, "/proc/%d/stat", pid);
+    sprintf(rutaStatus, "cat /proc/%d/status | grep 'VmSwap:'", pid);
+
+    archivo = fopen(ruta, "r");
+    fscanf(archivo, "%*d (%[^)]) %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*lu %*lu %*lu %*lu %*ld %*ld %*ld %*ld %*ld %*llu %*lu %ld",
+                    nombreProceso, &rss);
+    fclose(archivo);
+
+
+    statusAr = popen(rutaStatus, "r");
+    fgets(buffer, 120, statusAr);
+    pclose(statusAr);
+
+    sscanf(buffer, "%*s %ld", &swap_mem);
+
+    porcentaje = strategia.algoritmo(rss, tamPag, swap_mem, memoriaTotal, memoriaSwap);
+
+    sprintf(datos, "PID: %d, Nombre: %s, %% Mem %s: %.2f%%\n", pid, nombreProceso, tipo, porcentaje);
+
+    write(pipe, datos, sizeof(datos));
+    close(pipe);
 }

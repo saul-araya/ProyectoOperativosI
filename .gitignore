@@ -6,3 +6,4 @@ cpu.o
 disco.o
 ram.o
 programa.o
+.vscode
